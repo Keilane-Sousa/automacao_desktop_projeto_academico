@@ -2,8 +2,10 @@
 
 projeto de automação de desktop, baseado em paradigma de programação em python.
 
+
 ### Objetivo:
 Criar de maneira simples uma automação que organize em pastas separadas arquivos salvos, por meio do seu tipo.
+
 
 ### Criadores:
 * Ygor do Amaral
@@ -11,6 +13,7 @@ Criar de maneira simples uma automação que organize em pastas separadas arquiv
 * Matheus de Vasconcelos
 * Allan dos santos
 *  Cláudio Max
+
   
 ### Funcionalidades: 
 * selecionar pasta
