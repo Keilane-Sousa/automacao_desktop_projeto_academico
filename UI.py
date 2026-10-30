@@ -11,6 +11,7 @@ class Interface:
         self.master = master
         self.pasta_principal = None
         self.regras = {}
+        self.pendentes = {}
         self.corFundo = "#1e1e2e"
 # aqui e os containers n acho q seja nessesario mexer
         self.primeiroContainer = Frame(master, bg=self.corFundo)
@@ -60,6 +61,7 @@ class Interface:
             return
         self.pasta_principal = pasta
         self.regras.clear()
+        self.pendentes.clear()
         #aqui e para esconder a tela, n vejo motivos para mexer aqui
         for container in (self.primeiroContainer, self.segundoContainer, self.terceiroContainer):
             container.pack_forget()
@@ -141,7 +143,7 @@ class Interface:
 
     def previsualizar(self, pasta):
         try:
-            plano = logica.gerar_previsualizacao(pasta, self.regras, {})
+            plano = logica.gerar_previsualizacao(pasta, self.regras, self.pendentes)
             self.previa = telaPrevia(self.master, pasta, plano,
                                      lambda p: self.organizar_arquivos(pasta, p))
         except (OSError, ValueError) as erro:
@@ -228,6 +230,7 @@ class Interface:
     def voltar_inicio(self):
         self.pasta_principal = None
         self.regras.clear()
+        self.pendentes.clear()
         self.telaConclusao.destroy()
         self.centralizar(400, 150)
         self.primeiroContainer.pack()
@@ -237,7 +240,7 @@ class Interface:
 
     def abrir_configuracoes(self):
         try:
-            telaConfig(self.master, self.pasta_principal, self.regras)
+            telaConfig(self.master, self.pasta_principal, self.regras, self.pendentes)
         except (OSError, ValueError) as erro:
             messagebox.showerror("Configuração", str(erro), parent=self.master)
 

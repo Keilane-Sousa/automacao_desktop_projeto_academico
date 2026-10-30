@@ -5,14 +5,14 @@ import os
 regras = {}
 
 
-def _pasta(caminho):
+def _pasta(caminho):  # Valida a pasta principal.
     pasta = Path(caminho).resolve(strict=True)
     if not pasta.is_dir():
         raise NotADirectoryError(f'Não é uma pasta: {pasta}')
     return pasta
 
 
-def _nome(nome):
+def _nome(nome):  # Valida um nome sem caminho.
     texto = str(nome)
     if not texto or texto in ('.', '..') or any(c in texto for c in '/\\:'):
         raise ValueError('Informe somente o nome, sem caminhos ou unidades.')
@@ -21,7 +21,7 @@ def _nome(nome):
     return texto
 
 
-def _subpasta(pasta, nome):
+def _subpasta(pasta, nome):  # Valida a subpasta de destino.
     destino = pasta / _nome(nome)
     if destino.is_symlink() or destino.is_junction():
         raise ValueError('Links e junções não são destinos permitidos.')
@@ -31,7 +31,7 @@ def _subpasta(pasta, nome):
     return real
 
 
-def _extensao(extensao):
+def _extensao(extensao):  # Valida e padroniza a extensão.
     if not isinstance(extensao, str):
         raise ValueError('A extensão deve ser texto.')
     ext = extensao.strip().lower()
@@ -42,25 +42,25 @@ def _extensao(extensao):
     return ext
 
 
-def listar_subpastas(pasta_principal):
+def listar_subpastas(pasta_principal):  # Lista as subpastas permitidas.
     pasta = _pasta(pasta_principal)
     return sorted((p.name for p in pasta.iterdir()
                    if not p.is_symlink() and not p.is_junction() and p.is_dir()),
                   key=str.casefold)
 
 
-def listar_arquivos(pasta_principal):
+def listar_arquivos(pasta_principal):  # Lista os arquivos da pasta principal.
     pasta = _pasta(pasta_principal)
     return sorted((p.name for p in pasta.iterdir()
                    if not p.is_symlink() and p.is_file()), key=str.casefold)
 
 
-def listar_extensoes(pasta_principal):
+def listar_extensoes(pasta_principal):  # Lista as extensões sem repetição.
     return sorted({Path(nome).suffix.lower() for nome in listar_arquivos(pasta_principal)
                    if Path(nome).suffix})
 
 
-def adicionar_regra(pasta_principal, regras, extensao, subpasta):
+def adicionar_regra(pasta_principal, regras, extensao, subpasta):  # Associa uma extensão a um destino.
     pasta = _pasta(pasta_principal)
     ext = _extensao(extensao)
     destino = _subpasta(pasta, subpasta)
@@ -68,20 +68,20 @@ def adicionar_regra(pasta_principal, regras, extensao, subpasta):
     return consultar_regras(regras)
 
 
-def remover_regra(regras, extensao):
+def remover_regra(regras, extensao):  # Remove a regra da extensão.
     return regras.pop(_extensao(extensao), None) is not None
 
 
-def consultar_regras(regras):
+def consultar_regras(regras):  # Retorna uma cópia das regras.
     return dict(regras)
 
 
-def _registro(arquivo, destino, status, mensagem):
+def _registro(arquivo, destino, status, mensagem):  # Cria o registro de um resultado.
     return {'arquivo': arquivo, 'destino': destino,
             'status': status, 'mensagem': mensagem}
 
 
-def _avaliar_movimentacao(pasta, nome, destino, registrar_assinatura=False):
+def _avaliar_movimentacao(pasta, nome, destino, registrar_assinatura=False):  # Verifica destino e possíveis conflitos.
     item = _registro(nome, destino, 'previsto', 'Arquivo seria movido.')
     try:
         alvo = _subpasta(pasta, destino) / nome
@@ -94,7 +94,7 @@ def _avaliar_movimentacao(pasta, nome, destino, registrar_assinatura=False):
     return item
 
 
-def simular_organizacao(pasta_principal, regras):
+def simular_organizacao(pasta_principal, regras):  # Simula a organização sem mover arquivos.
     pasta = _pasta(pasta_principal)
     resultado = []
     for nome in listar_arquivos(pasta):
@@ -105,7 +105,7 @@ def simular_organizacao(pasta_principal, regras):
     return resultado
 
 
-def mover_arquivo(pasta_principal, arquivo, subpasta):
+def mover_arquivo(pasta_principal, arquivo, subpasta):  # Move um arquivo sem sobrescrever.
     pasta = _pasta(pasta_principal)
     origem = pasta / _nome(arquivo)
     if origem.is_symlink():
@@ -125,7 +125,7 @@ def mover_arquivo(pasta_principal, arquivo, subpasta):
     return destino
 
 
-def _executar_itens(pasta, itens, verificar_assinatura=False):
+def _executar_itens(pasta, itens, verificar_assinatura=False):  # Executa os itens previstos e registra falhas.
     for item in itens:
         if item['status'] != 'previsto':
             continue
@@ -142,13 +142,13 @@ def _executar_itens(pasta, itens, verificar_assinatura=False):
             item.update(status='erro', mensagem=str(erro))
 
 
-def organizar_arquivos(pasta_principal, regras):
+def organizar_arquivos(pasta_principal, regras):  # Simula e executa a organização direta.
     resultado = simular_organizacao(pasta_principal, regras)
     _executar_itens(pasta_principal, resultado)
     return resultado
 
 
-def adicionar_regras(pasta_principal, regras, extensoes, subpasta):
+def adicionar_regras(pasta_principal, regras, extensoes, subpasta):  # Associa várias extensões ao mesmo destino.
     if isinstance(extensoes, str):
         raise ValueError('Informe uma lista de extensões.')
     extensoes = [_extensao(extensao) for extensao in extensoes]
@@ -158,7 +158,7 @@ def adicionar_regras(pasta_principal, regras, extensoes, subpasta):
     return consultar_regras(regras)
 
 
-def registrar_movimentacoes_manuais(pasta_principal, pendentes, arquivos, subpasta):
+def registrar_movimentacoes_manuais(pasta_principal, pendentes, arquivos, subpasta):  # Registra destinos individuais sem mover arquivos.
     pasta = _pasta(pasta_principal)
     destino = _subpasta(pasta, subpasta)
     if isinstance(arquivos, str):
@@ -174,7 +174,7 @@ def registrar_movimentacoes_manuais(pasta_principal, pendentes, arquivos, subpas
     return consultar_movimentacoes_manuais(pendentes)
 
 
-def remover_movimentacao_manual(pendentes, arquivo):
+def remover_movimentacao_manual(pendentes, arquivo):  # Remove uma escolha manual pendente.
     nome = os.path.normcase(_nome(arquivo))
     for chave in list(pendentes):
         if os.path.normcase(chave) == nome:
@@ -183,16 +183,16 @@ def remover_movimentacao_manual(pendentes, arquivo):
     return False
 
 
-def consultar_movimentacoes_manuais(pendentes):
+def consultar_movimentacoes_manuais(pendentes):  # Retorna uma cópia das escolhas manuais.
     return dict(pendentes)
 
 
-def _assinatura(arquivo):
+def _assinatura(arquivo):  # Obtém dados para detectar alterações no arquivo.
     dados = arquivo.stat()
     return (dados.st_dev, dados.st_ino, dados.st_size, dados.st_mtime_ns)
 
 
-def gerar_previsualizacao(pasta_principal, regras, pendentes):
+def gerar_previsualizacao(pasta_principal, regras, pendentes):  # Monta o plano com regras e escolhas manuais.
     pasta = _pasta(pasta_principal)
     manuais = {}
     for arquivo, destino in pendentes.items():
@@ -225,7 +225,7 @@ def gerar_previsualizacao(pasta_principal, regras, pendentes):
     return {'pasta_principal': str(pasta), 'itens': itens}
 
 
-def resumir_resultados(itens):
+def resumir_resultados(itens):  # Conta os resultados por situação.
     contagens = {status: 0 for status in
                  ('previsto', 'movido', 'sem_regra', 'conflito', 'erro')}
     for item in itens:
@@ -233,7 +233,7 @@ def resumir_resultados(itens):
     return {'total': len(itens), **contagens}
 
 
-def executar_movimentacoes(plano):
+def executar_movimentacoes(plano):  # Valida e executa o plano confirmado.
     pasta = _pasta(plano['pasta_principal'])
     itens = [dict(item) for item in plano['itens']]
     vistos = set()

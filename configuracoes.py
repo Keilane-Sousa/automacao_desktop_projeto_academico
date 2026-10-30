@@ -3,9 +3,12 @@ from tkinter import ttk, messagebox
 import organizador_logica as logica
 
 class telaConfig:
-    def __init__(self, master, pasta_principal, regras):
+    def __init__(self, master, pasta_principal, regras, pendentes=None):
         self.pasta_principal = pasta_principal
         self.regras_salvas = regras
+        self.pendentes_salvos = pendentes if pendentes is not None else {}
+        self.arquivosDisponiveis = logica.listar_arquivos(pasta_principal)
+        self.manuais = []
         self.corFundo = "#1e1e2e"
         self.corCaixa = "#313244"
         self.corEntrada = "#45475a"
@@ -38,6 +41,9 @@ class telaConfig:
         botoes.pack(side=BOTTOM, fill=X, padx=20, pady=15)
         Button(botoes, text="+ Adicionar Regra", command=self.adicionar_regra,
                bg=self.corCaixa, fg="white", font=self.fonte).pack(side=LEFT)
+        Button(botoes, text="+ Arquivo específico",
+               command=lambda: self.adicionar_regra(manual=True),
+               bg=self.corCaixa, fg="white", font=self.fonte).pack(side=LEFT, padx=(10, 0))
         Button(botoes, text="Salvar", command=self.salvarconf, bg=self.corCaixa,
                fg="white", font=self.fonte, width=10).pack(side=LEFT, padx=10)
         Button(botoes, text="Voltar", command=self.janela.destroy, bg=self.corCaixa,
@@ -45,7 +51,7 @@ class telaConfig:
 
         Label(self.janela, text="Definir Regras", bg=self.corFundo, fg="white",
               font=("Arial", 15, "bold")).pack(pady=(15, 2))
-        Label(self.janela, text="Associe os tipos de arquivo às pastas de destino.",
+        Label(self.janela, text="Associe extensões ou arquivos a destinos. A escolha por arquivo tem prioridade.",
               bg=self.corFundo, fg="#a6adc8", font=("Arial", 9)).pack(pady=(0, 10))
 
         # títulos das colunas
@@ -53,7 +59,7 @@ class telaConfig:
         cabecalho.pack(padx=20, anchor=W)
         Label(cabecalho, text="Pasta de destino", width=18, anchor=W, bg=self.corFundo, fg="#a6adc8", font=self.fonte).pack(side=LEFT)
         Label(cabecalho, text="", width=4, bg=self.corFundo).pack(side=LEFT)
-        Label(cabecalho, text="Extensões", width=18, anchor=W, bg=self.corFundo, fg="#a6adc8", font=self.fonte).pack(side=LEFT)
+        Label(cabecalho, text="Extensão / arquivo", width=24, anchor=W, bg=self.corFundo, fg="#a6adc8", font=self.fonte).pack(side=LEFT)
 
         area = Frame(self.janela, bg=self.corFundo)
         area.pack(fill=BOTH, expand=True, padx=(20, 10), pady=5)
@@ -80,7 +86,9 @@ class telaConfig:
             self.adicionar_regra(extensao, destino)
         if not self.regras:
             self.adicionar_regra()
-        self.centralizar(520, 460)
+        for arquivo, destino in self.pendentes_salvos.items():
+            self.adicionar_regra(arquivo, destino, manual=True)
+        self.centralizar(650, 460)
 
     def rolar(self, evento):
 
@@ -96,6 +104,7 @@ class telaConfig:
     #faça sua magica aqui amigo, faça um jeito de salvar isso aqui
     def salvarconf(self):
         novas = {}
+        manuais = {}
         try:
             for _, entrada, combo in self.regras:
                 texto, destino = entrada.get().strip(), combo.get().strip()
@@ -105,14 +114,24 @@ class telaConfig:
                     raise ValueError("Preencha as extensões e a pasta de cada regra.")
                 logica.adicionar_regra(self.pasta_principal, novas,
                                        self.extensoesPorRotulo.get(texto, ""), destino)
+            for _, entrada, combo in self.manuais:
+                arquivo, destino = entrada.get(), combo.get()
+                if not arquivo and not destino:
+                    continue
+                if not arquivo or not destino:
+                    raise ValueError("Selecione o arquivo e sua pasta de destino.")
+                logica.registrar_movimentacoes_manuais(
+                    self.pasta_principal, manuais, [arquivo], destino)
         except (OSError, ValueError) as erro:
             messagebox.showerror("Salvar regras", str(erro), parent=self.janela)
             return
         self.regras_salvas.clear()
         self.regras_salvas.update(novas)
+        self.pendentes_salvos.clear()
+        self.pendentes_salvos.update(manuais)
         self.janela.destroy()
 
-    def adicionar_regra(self, valor_extensao="", valor_pasta=""):
+    def adicionar_regra(self, valor_extensao="", valor_pasta="", manual=False):
         linha = Frame(self.listaRegras, bg=self.corFundo)
         linha.pack(fill=X, pady=4)
 
@@ -125,16 +144,18 @@ class telaConfig:
 
         Label(linha, text="←", bg=self.corFundo, fg="white", font=self.fonte).pack(side=LEFT, padx=10)
 
-        extensao = ttk.Combobox(linha, values=self.extensoesDisponiveis,
-                                 state="readonly", width=16, font=("Arial", 11))
+        extensao = ttk.Combobox(linha,
+                                 values=self.arquivosDisponiveis if manual else self.extensoesDisponiveis,
+                                 state="readonly", width=26, font=self.fonte)
         extensao.pack(side=LEFT, ipady=5)
-        extensao.set(f"{valor_extensao[1:].upper()} ({valor_extensao})" if valor_extensao else "")
+        extensao.set(valor_extensao if manual else
+                     (f"{valor_extensao[1:].upper()} ({valor_extensao})" if valor_extensao else ""))
         extensao.bind("<MouseWheel>", lambda e: (self.rolar(e), "break")[1])
 
         Button(linha, text="🗑", command=lambda: self.remover_regra(linha),
                bg=self.corCaixa, fg="#f38ba8", font=self.fonte).pack(side=LEFT, padx=(10, 0))
 
-        self.regras.append((linha, extensao, pasta))
+        (self.manuais if manual else self.regras).append((linha, extensao, pasta))
 
 
         self.canvas.update_idletasks()
@@ -143,6 +164,7 @@ class telaConfig:
 
     def remover_regra(self, linha):
         self.regras = [r for r in self.regras if r[0] is not linha]
+        self.manuais = [r for r in self.manuais if r[0] is not linha]
         linha.destroy()
 
     def obter_regras(self):

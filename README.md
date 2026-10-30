@@ -40,4 +40,4 @@ Selecione a pasta principal, associe as extensões às subpastas existentes em *
 python -m unittest -v teste_organizador
 ```
 
-Os testes criam arquivos fictícios em diretórios temporários. A movimentação manual tem suporte na lógica, mas ainda não está disponível na interface.
+Os testes criam arquivos fictícios em diretórios temporários. Para definir o destino de um arquivo individual, use **+ Arquivo específico** na tela de regras. Essa escolha tem prioridade sobre a regra por extensão e passa pela prévia e confirmação antes da movimentação.
