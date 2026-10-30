@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
 import os
+from configuracoes import telaConfig
 
 class Interface:
 
@@ -31,9 +32,9 @@ class Interface:
         self.button["font"] = ("Arial", "10")
         self.button.pack(pady=10)
 
-        self.button2 = Button(self.terceiroContainer, text="Configurações", command=self.abrir_configuracoes, bg="#313244", fg="white")
-        self.button2["font"] = ("Arial", "10")
-        self.button2.pack(pady=10)
+        self.creditos = Label(self.terceiroContainer, text="Desenvolvido por Ygor, Matheus, Keilane, Allan e Max", bg=self.corFundo, fg="white")
+        self.creditos["font"] = ("Arial", "8")
+        self.creditos.pack(pady=10)
 
         self.centralizar(400, 150)
 
@@ -129,8 +130,7 @@ class Interface:
         print(f"Organizando arquivos em: {pasta}")
 
     def abrir_configuracoes(self):
-        #n faço ideia do oq vc vai colocar para configurar então vou deixar para vc fazer aqui, se precisar eu posso fazer uma tela depois
-        print("Abrindo configurações...")
+        telaConfig(self.master)
 
 
 
