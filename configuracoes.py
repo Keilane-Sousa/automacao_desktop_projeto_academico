@@ -2,7 +2,8 @@ from tkinter import *
 from tkinter import ttk
 
 class telaConfig:
-    def __init__(self, master=None):
+    def __init__(self, master=None, regras=None, ao_fechar=None):
+        self.ao_fechar = ao_fechar
         self.corFundo = "#1e1e2e"
         self.corCaixa = "#313244"
         self.corEntrada = "#45475a"    
@@ -27,7 +28,7 @@ class telaConfig:
         self.janela.option_add("*TCombobox*Listbox.background", self.corCaixa)
         self.janela.option_add("*TCombobox*Listbox.foreground", "white")
 
-        Button(self.janela, text="Voltar", command=self.janela.destroy, bg=self.corCaixa,
+        Button(self.janela, text="Voltar", command=self.fechar, bg=self.corCaixa,
                fg="white", font=self.fonte, width=10).pack(side=BOTTOM, anchor=W, padx=30, pady=(5, 15))
 
         Button(self.janela, text="Salvar", command=self.salvarconf, bg=self.corCaixa,
@@ -69,7 +70,12 @@ class telaConfig:
         self.janela.bind("<Button-4>", self.rolar)
         self.janela.bind("<Button-5>", self.rolar)
 
-        self.adicionar_regra()   
+        if regras:
+            for ext, pasta in regras:
+                self.adicionar_regra(ext, pasta)
+            else:
+                self.adicionar_regra()
+            self.janela.protocol("WM_DELETE_WINDOW", self.fechar)
         self.centralizar(520, 460)
 
     def rolar(self, evento):
@@ -83,26 +89,26 @@ class telaConfig:
         else:
             self.canvas.yview_scroll(int(-evento.delta / 120), "units")
 
-    #faça sua magica aqui amigo, faça um jeito de salvar isso aqui
+    # faça sua magica
     def salvarconf(self):
         return
 
-    def adicionar_regra(self):
+    def adicionar_regra(self, texto_ext="", texto_pasta=""):
         linha = Frame(self.listaRegras, bg=self.corFundo)
         linha.pack(fill=X, pady=4)
-
 
         extensao = Entry(linha, width=16, bg=self.corEntrada, fg="white",
                          insertbackground="white", relief=FLAT, font=("Arial", 11),
                          highlightthickness=1, highlightbackground=self.corBorda,
                          highlightcolor="#cdd6f4")
         extensao.pack(side=LEFT, ipady=5)
+        extensao.insert(0, texto_ext)
 
         Label(linha, text="→", bg=self.corFundo, fg="white", font=self.fonte).pack(side=LEFT, padx=10)
 
         pasta = ttk.Combobox(linha, values=self.pastasSugeridas, width=18, font=self.fonte)
         pasta.pack(side=LEFT, ipady=3)
-
+        pasta.set(texto_pasta)
         pasta.bind("<MouseWheel>", lambda e: (self.rolar(e), "break")[1])
 
         Button(linha, text="🗑", command=lambda: self.remover_regra(linha),
@@ -110,19 +116,24 @@ class telaConfig:
 
         self.regras.append((linha, extensao, pasta))
 
-
-        self.canvas.update_idletasks()
-        self.canvas.yview_moveto(1)
-        extensao.focus_set()
+        if not texto_ext:
+            self.canvas.update_idletasks()
+            self.canvas.yview_moveto(1)
+            extensao.focus_set()
 
     def remover_regra(self, linha):
         self.regras = [r for r in self.regras if r[0] is not linha]
         linha.destroy()
 
     def obter_regras(self):
-        # devolve algo como {".pdf, .docx": "Documentos", ".txt": "Textos"
-        return {e.get().strip(): p.get().strip()
-                for _, e, p in self.regras if e.get().strip() and p.get().strip()}
+        # devolve uma lista como [(".pdf, .docx", "Documentos"), (".txt", "Textos")]
+        return [(e.get().strip(), p.get().strip())
+                for _, e, p in self.regras if e.get().strip() and p.get().strip()]
+
+    def fechar(self):
+        if self.ao_fechar:
+            self.ao_fechar(self.obter_regras())
+        self.janela.destroy()
 
     def centralizar(self, largura, altura):
         self.janela.update_idletasks()
