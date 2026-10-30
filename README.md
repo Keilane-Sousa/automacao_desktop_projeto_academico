@@ -23,3 +23,21 @@ Criar de maneira simples uma automação que organize em pastas separadas arquiv
 * Configurações
 
 
+
+## Como executar
+
+Requer Python 3.12 ou superior com Tkinter. O projeto utiliza somente a biblioteca padrão do Python.
+
+```powershell
+python UI.py
+```
+
+Selecione a pasta principal, associe as extensões às subpastas existentes em **Regras de Organização** e confira a prévia antes de confirmar. As regras ficam em memória durante o uso da pasta selecionada. Somente arquivos da pasta principal são organizados; arquivos das subpastas permanecem intactos. Arquivos sem regra e conflitos de nome não são movidos, e arquivos existentes não são sobrescritos.
+
+## Testes
+
+```powershell
+python -m unittest -v teste_organizador
+```
+
+Os testes criam arquivos fictícios em diretórios temporários. A movimentação manual tem suporte na lógica, mas ainda não está disponível na interface.
